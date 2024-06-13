@@ -1,6 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Container, Box, Button, Textarea, VStack, HStack, Text } from '@chakra-ui/react';
 import { FaPrint } from 'react-icons/fa';
+
+const DraggableSentence = ({ sentence, onDrop }) => {
+  const [, ref] = useDrag({
+    type: 'sentence',
+    item: { sentence },
+  });
+
+  const [, drop] = useDrop({
+    accept: 'sentence',
+    drop: (item) => onDrop(item.sentence),
+  });
+
+  return (
+    <Text ref={(node) => ref(drop(node))} mb={2} p={2} bg="gray.200" borderRadius="md" cursor="pointer">
+      {sentence}.
+    </Text>
+  );
+};
 
 const Result = () => {
   const [reports, setReports] = useState([]);
@@ -15,7 +35,7 @@ const Result = () => {
       .catch(error => console.error('Error fetching reports:', error));
   }, []);
 
-  const handleSentenceClick = (sentence) => {
+  const handleDrop = (sentence) => {
     setSelectedSentences([...selectedSentences, sentence]);
   };
 
@@ -28,7 +48,8 @@ const Result = () => {
   };
 
   return (
-    <Container maxW="container.xl" py={10}>
+    <DndProvider backend={HTML5Backend}>
+      <Container maxW="container.xl" py={10}>
       <VStack spacing={8}>
         <Box w="full" p={5} bg="gray.100" borderRadius="md">
           <Text fontSize="2xl" mb={4}>Previously Generated Reports</Text>
@@ -38,17 +59,7 @@ const Result = () => {
               <Text fontSize="sm" mb={2}>Created At: {new Date(report.created_at).toLocaleString()}</Text>
               <Box>
                 {report.report_content.split('. ').map((sentence, index) => (
-                  <Text
-                    key={index}
-                    mb={2}
-                    p={2}
-                    bg="gray.200"
-                    borderRadius="md"
-                    cursor="pointer"
-                    onClick={() => handleSentenceClick(sentence)}
-                  >
-                    {sentence}.
-                  </Text>
+                  <DraggableSentence key={index} sentence={sentence} onDrop={handleDrop} />
                 ))}
               </Box>
             </Box>
@@ -76,6 +87,7 @@ const Result = () => {
         </Box>
       </VStack>
     </Container>
+    </DndProvider>
   );
 };
 
